@@ -66,6 +66,30 @@ void aligned_block_fill_nt_sse2(int64_t * __restrict dst,
                                 int64_t * __restrict src,
                                 int                  size);
 
+void aligned_block_copy_avx(int64_t * __restrict dst,
+                             int64_t * __restrict src,
+                             int                  size);
+
+void aligned_block_copy256_avx(int64_t * __restrict dst,
+                             int64_t * __restrict src,
+                             int                  size);
+
+void aligned_block_copy_avx512(int64_t * __restrict dst,
+                             int64_t * __restrict src,
+                             int                  size);
+
+void aligned_block_copy512_avx512(int64_t * __restrict dst,
+                             int64_t * __restrict src,
+                             int                  size);
+
+void unaligned_block_copy_nt_f64_avx(int64_t * __restrict dst,
+                             int64_t * __restrict src,
+                             int                  size);
+
+void unaligned_block_copy_nt_f64_avx512(int64_t * __restrict dst,
+                             int64_t * __restrict src,
+                             int                  size);
+
 #ifdef __cplusplus
 }
 #endif

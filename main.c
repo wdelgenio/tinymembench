@@ -161,21 +161,98 @@ void memset_wrapper(int64_t *dst, int64_t *src, int size)
     memset(dst, src[0], size);
 }
 
+/*
+ * Special algorithm tested by Jason Arnold used in Ocient codebase
+ */
+void move4k(int64_t *dest, int64_t *src, int len) {
+	if (len > 4096) {
+		memcpy(dest, src, len);
+		return;
+	}
+
+	if ((len & 0x1000) != 0) {
+		memcpy(dest, src, 4096);
+		dest += 4096;
+		src += 4096;
+	}
+	if ((len & 0x0800) != 0) {
+		memcpy(dest, src, 2048);
+		dest += 2048;
+		src += 2048;
+	}
+	if ((len & 0x0400) != 0) {
+		memcpy(dest, src, 1024);
+		dest += 1024;
+		src += 1024;
+	}
+	if ((len & 0x0200) != 0) {
+		memcpy(dest, src, 512);
+		dest += 512;
+		src += 512;
+	}
+	if ((len & 0x0100) != 0) {
+		memcpy(dest, src, 256);
+		dest += 256;
+		src += 256;
+	}
+	if ((len & 0x80) != 0) {
+		memcpy(dest, src, 128);
+		dest += 128;
+		src += 128;
+	}
+	if ((len & 0x40) != 0) {
+		memcpy(dest, src, 64);
+		dest += 64;
+		src += 64;
+	}
+	if ((len & 0x20) != 0) {
+		memcpy(dest, src, 32);
+		dest += 32;
+		src += 32;
+	}
+	if ((len & 0x10) != 0) {
+		memcpy(dest, src, 16);
+		dest += 16;
+		src += 16;
+	}
+	if ((len & 0x08) != 0) {
+		memcpy(dest, src, 8);
+		dest += 8;
+		src += 8;
+	}
+	if ((len & 0x04) != 0) {
+		memcpy(dest, src, 4);
+		dest += 4;
+		src += 4;
+	}
+	if ((len & 0x02) != 0) {
+		memcpy(dest, src, 2);
+		dest += 2;
+		src += 2;
+	}
+	if ((len & 0x01) != 0) {
+		memcpy(dest, src, 1);
+		// last case, so we don't need to increment src/dest
+	}
+}
+
+
 static bench_info c_benchmarks[] =
 {
+    { "move4k", 0, move4k },
     { "C copy backwards", 0, aligned_block_copy_backwards },
-    { "C copy backwards (32 byte blocks)", 0, aligned_block_copy_backwards_bs32 },
-    { "C copy backwards (64 byte blocks)", 0, aligned_block_copy_backwards_bs64 },
-    { "C copy", 0, aligned_block_copy },
-    { "C copy prefetched (32 bytes step)", 0, aligned_block_copy_pf32 },
-    { "C copy prefetched (64 bytes step)", 0, aligned_block_copy_pf64 },
-    { "C 2-pass copy", 1, aligned_block_copy },
-    { "C 2-pass copy prefetched (32 bytes step)", 1, aligned_block_copy_pf32 },
-    { "C 2-pass copy prefetched (64 bytes step)", 1, aligned_block_copy_pf64 },
-    { "C fill", 0, aligned_block_fill },
-    { "C fill (shuffle within 16 byte blocks)", 0, aligned_block_fill_shuffle16 },
-    { "C fill (shuffle within 32 byte blocks)", 0, aligned_block_fill_shuffle32 },
-    { "C fill (shuffle within 64 byte blocks)", 0, aligned_block_fill_shuffle64 },
+    // { "C copy backwards (32 byte blocks)", 0, aligned_block_copy_backwards_bs32 },
+    // { "C copy backwards (64 byte blocks)", 0, aligned_block_copy_backwards_bs64 },
+    // { "C copy", 0, aligned_block_copy },
+    // { "C copy prefetched (32 bytes step)", 0, aligned_block_copy_pf32 },
+    // { "C copy prefetched (64 bytes step)", 0, aligned_block_copy_pf64 },
+    // { "C 2-pass copy", 1, aligned_block_copy },
+    // { "C 2-pass copy prefetched (32 bytes step)", 1, aligned_block_copy_pf32 },
+    // { "C 2-pass copy prefetched (64 bytes step)", 1, aligned_block_copy_pf64 },
+    // { "C fill", 0, aligned_block_fill },
+    // { "C fill (shuffle within 16 byte blocks)", 0, aligned_block_fill_shuffle16 },
+    // { "C fill (shuffle within 32 byte blocks)", 0, aligned_block_fill_shuffle32 },
+    // { "C fill (shuffle within 64 byte blocks)", 0, aligned_block_fill_shuffle64 },
     { NULL, 0, NULL }
 };
 
@@ -514,14 +591,24 @@ int main(void)
     printf("==         brackets                                                     ==\n");
     printf("==========================================================================\n\n");
 
-    bandwidth_bench(dstbuf, srcbuf, tmpbuf, bufsize, BLOCKSIZE, " ", c_benchmarks);
-    printf(" ---\n");
-    bandwidth_bench(dstbuf, srcbuf, tmpbuf, bufsize, BLOCKSIZE, " ", libc_benchmarks);
     bench_info *bi = get_asm_benchmarks();
-    if (bi->f) {
+#ifdef BLOCKSIZE_TEST
+    for(int block_size = 16; block_size <= BLOCKSIZE; block_size *= 2 ) {
+#else
+    int block_size = BLOCKSIZE;
+#endif
+        printf(" blocksize: %i\n", block_size);
+        bandwidth_bench(dstbuf, srcbuf, tmpbuf, bufsize, block_size, " ", c_benchmarks);
         printf(" ---\n");
-        bandwidth_bench(dstbuf, srcbuf, tmpbuf, bufsize, BLOCKSIZE, " ", bi);
+        bandwidth_bench(dstbuf, srcbuf, tmpbuf, bufsize, block_size, " ", libc_benchmarks);
+
+        if (bi->f) {
+            printf(" ---\n");
+            bandwidth_bench(dstbuf, srcbuf, tmpbuf, bufsize, block_size, " ", bi);
+        }
+#ifdef BLOCKSIZE_TEST
     }
+#endif
 
 #ifdef __linux__
     bi = get_asm_framebuffer_benchmarks();

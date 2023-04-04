@@ -246,6 +246,106 @@ asm_function aligned_block_fill_nt_sse2
     ret
 .endfunc
 
+asm_function aligned_block_copy_avx
+0:
+    vmovdqa      ymm0,       [SRC + 0]
+    vmovdqa      ymm1,       [SRC + 32]
+    vmovdqa      [DST + 0],  ymm0
+    vmovdqa      [DST + 32], ymm1
+    add         SRC,        64
+    add         DST,        64
+    sub         SIZE, 64
+    jg          0b
+    ret
+.endfunc
+
+asm_function aligned_block_copy256_avx
+0:
+    vmovdqa      ymm0,       [SRC + 0]
+    vmovdqa      ymm1,       [SRC + 32]
+    vmovdqa      ymm2,       [SRC + 64]
+    vmovdqa      ymm3,       [SRC + 96]
+    vmovdqa      ymm4,       [SRC + 128]
+    vmovdqa      ymm5,       [SRC + 160]
+    vmovdqa      ymm6,       [SRC + 192]
+    vmovdqa      ymm7,       [SRC + 224]
+    vmovdqa      [DST + 0],     ymm0
+    vmovdqa      [DST + 32],    ymm1
+    vmovdqa      [DST + 64],    ymm2
+    vmovdqa      [DST + 96],    ymm3
+    vmovdqa      [DST + 128],   ymm4
+    vmovdqa      [DST + 160],   ymm5
+    vmovdqa      [DST + 192],   ymm6
+    vmovdqa      [DST + 224],   ymm7
+    add         SRC,        256
+    add         DST,        256
+    sub         SIZE, 256
+    jg          0b
+    ret
+.endfunc
+
+asm_function aligned_block_copy_avx512
+0:
+    vmovdqa64      zmm0,       [SRC + 0]
+    vmovdqa64      [DST + 0],  zmm0
+    add         SRC,        64
+    add         DST,        64
+    sub         SIZE, 64
+    jg          0b
+    ret
+.endfunc
+
+asm_function aligned_block_copy512_avx512
+0:
+    vmovdqa64      zmm0,       [SRC + 0]
+    vmovdqa64      zmm1,       [SRC + 64]
+    vmovdqa64      zmm2,       [SRC + 128]
+    vmovdqa64      zmm3,       [SRC + 192]
+    vmovdqa64      zmm4,       [SRC + 256]
+    vmovdqa64      zmm5,       [SRC + 320]
+    vmovdqa64      zmm6,       [SRC + 384]
+    vmovdqa64      zmm7,       [SRC + 448]
+    vmovdqa64      [DST + 0],     zmm0
+    vmovdqa64      [DST + 64],    zmm1
+    vmovdqa64      [DST + 128],    zmm2
+    vmovdqa64      [DST + 192],    zmm3
+    vmovdqa64      [DST + 256],   zmm4
+    vmovdqa64      [DST + 320],   zmm5
+    vmovdqa64      [DST + 384],   zmm6
+    vmovdqa64      [DST + 448],   zmm7
+    add         SRC,        512
+    add         DST,        512
+    sub         SIZE, 512
+    jg          0b
+    ret
+.endfunc
+
+asm_function unaligned_block_copy_nt_f64_avx
+0:
+    prefetcht0   [SRC + PREFETCH_DISTANCE]
+    vmovdqu    ymm0,       [SRC + 0]
+    vmovdqu    ymm1,       [SRC + 32]
+    vmovntdq      [DST + 0],  ymm0
+    vmovntdq      [DST + 32], ymm1
+    add         SRC,        64
+    add         DST,        64
+    sub         SIZE, 64
+    jg          0b
+    ret
+.endfunc
+
+asm_function unaligned_block_copy_nt_f64_avx512
+0:
+    prefetcht0   [SRC + PREFETCH_DISTANCE]
+    vmovdqu64    zmm0,       [SRC + 0]
+    vmovntdq     [DST + 0],  zmm0
+    add         SRC,        64
+    add         DST,        64
+    sub         SIZE, 64
+    jg          0b
+    ret
+.endfunc
+
 /*****************************************************************************/
 
 #endif
